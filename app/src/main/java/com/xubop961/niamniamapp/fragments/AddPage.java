@@ -2,8 +2,6 @@ package com.xubop961.niamniamapp.fragments;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -22,7 +20,6 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.cardview.widget.CardView;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -41,15 +38,9 @@ public class AddPage extends Fragment {
     private ArrayList<Integer> listIngredientes = new ArrayList<>();
     private String[] arrayIngredientes = {"Milk", "Egg", "Beef", "Rice", "Chicken", "Potatoes", "Pork", "Salmon", "Spaghetti", "Onion", "Sausages", "Banana", "Avocado"};
 
-    // Código de permisos
-    private static final int REQUEST_PERMISSION_STORAGE = 100;
-
     // Variables para la imagen
     private ImageView imageViewRecipe;
     private Uri selectedImageUri;
-
-    // EditText para nombre e instrucciones
-    private EditText editTextRecetaName, editTextInstrucciones;
 
     // ActivityResultLauncher para seleccionar imagen (usando registerForActivityResult)
     private ActivityResultLauncher<String> imagePickerLauncher = registerForActivityResult(
@@ -62,7 +53,20 @@ public class AddPage extends Fragment {
                         imageViewRecipe.setImageBitmap(bitmap);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Toast.makeText(getContext(), "Error loading image", Toast.LENGTH_SHORT).show();                    }
+                        Toast.makeText(getContext(), "Error loading image", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+    );
+
+    // ActivityResultLauncher para solicitar permisos
+    private ActivityResultLauncher<String> permissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            isGranted -> {
+                if (isGranted) {
+                    openImagePicker();
+                } else {
+                    Toast.makeText(getContext(), "Permiso denegado", Toast.LENGTH_SHORT).show();
                 }
             }
     );
@@ -83,8 +87,8 @@ public class AddPage extends Fragment {
         selectIngredientes = view.findViewById(R.id.selectIngredientes);
         selectedIngredientes = new boolean[arrayIngredientes.length];
 
-        editTextRecetaName = view.findViewById(R.id.textRecetaName);
-        editTextInstrucciones = view.findViewById(R.id.tetxInstrucciones);
+        EditText editTextRecetaName = view.findViewById(R.id.textRecetaName);
+        EditText editTextInstrucciones = view.findViewById(R.id.tetxInstrucciones);
         Button btnGuardarReceta = view.findViewById(R.id.btnGuardarReceta);
 
         // Configuramos la selección de ingredientes mediante diálogo
@@ -95,18 +99,14 @@ public class AddPage extends Fragment {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_MEDIA_IMAGES)
                         != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(getActivity(),
-                            new String[]{Manifest.permission.READ_MEDIA_IMAGES},
-                            REQUEST_PERMISSION_STORAGE);
+                    permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES);
                 } else {
                     openImagePicker();
                 }
             } else {
                 if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE)
                         != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(getActivity(),
-                            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                            REQUEST_PERMISSION_STORAGE);
+                    permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE);
                 } else {
                     openImagePicker();
                 }
@@ -121,10 +121,12 @@ public class AddPage extends Fragment {
             String imageUriString = (selectedImageUri != null) ? selectedImageUri.toString() : "";
 
             if (name.isEmpty() || instructions.isEmpty()) {
-                Toast.makeText(getContext(), "Please complete all fields", Toast.LENGTH_SHORT).show();            } else {
+                Toast.makeText(getContext(), "Please complete all fields", Toast.LENGTH_SHORT).show();
+            } else {
                 Recipe recipe = new Recipe(name, ingredients, instructions, imageUriString);
                 RecipePreferences.saveRecipe(getContext(), recipe);
-                Toast.makeText(getContext(), "Recipe saved", Toast.LENGTH_SHORT).show();                // Opcional: limpiar los campos luego de guardar
+                Toast.makeText(getContext(), "Recipe saved", Toast.LENGTH_SHORT).show();
+                // Opcional: limpiar los campos luego de guardar
                 editTextRecetaName.setText("");
                 editTextInstrucciones.setText("");
                 selectIngredientes.setText("");

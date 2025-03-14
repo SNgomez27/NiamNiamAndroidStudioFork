@@ -55,11 +55,6 @@
                     android:textColor="@color/colorText"
                     android:textSize="18sp"
                     android:textStyle="bold" />
-              
-
-
-
-
 
             </LinearLayout>
 
